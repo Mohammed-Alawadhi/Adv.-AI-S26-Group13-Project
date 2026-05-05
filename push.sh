@@ -1,14 +1,13 @@
 #!/usr/bin/env bash
 # ================================================================
 #  push.sh — Initialize git, commit everything, and push to GitHub.
+#            Reads PAT directly from the user (not interactively from git),
+#            then embeds it in the remote URL just for this push.
 #
 #  Run from the project root:
 #      cd /Users/error/Downloads/Adv.-AI-S26-Group13-Project
 #      chmod +x push.sh
 #      ./push.sh
-#
-#  You'll need a GitHub Personal Access Token (PAT) with 'repo' scope.
-#  Generate one at: https://github.com/settings/tokens
 # ================================================================
 
 set -euo pipefail
@@ -16,7 +15,6 @@ set -euo pipefail
 # Repo config
 GH_USER="Mohammed-Alawadhi"
 GH_REPO="Adv.-AI-S26-Group13-Project"
-REMOTE_URL="https://github.com/${GH_USER}/${GH_REPO}.git"
 DEFAULT_BRANCH="main"
 
 # Colors
@@ -33,7 +31,6 @@ fail() { echo -e "${RED}    ✗ ERROR: $1${NC}"; exit 1; }
 
 ROOT="$(pwd)"
 echo -e "${GREEN}Working in: ${ROOT}${NC}"
-echo -e "${GREEN}Pushing to: ${REMOTE_URL}${NC}"
 echo ""
 
 # ================================================================
@@ -60,14 +57,6 @@ step "Repo size summary"
 du -sh */ 2>/dev/null | sort -h
 echo "    Total: $(du -sh . | cut -f1)"
 
-# Quick warning if anything looks oversized
-TOTAL_MB=$(du -sm . | cut -f1)
-if [ "$TOTAL_MB" -gt 500 ]; then
-    warn "Repo is ${TOTAL_MB} MB — GitHub recommends < 1 GB"
-    read -p "    Continue anyway? (y/N): " CONFIRM
-    [ "${CONFIRM,,}" != "y" ] && fail "Aborted by user"
-fi
-
 # ================================================================
 step "Initializing git"
 
@@ -79,9 +68,9 @@ else
 fi
 
 # Check git identity
-GIT_USER=$(git config user.name 2>/dev/null || echo "")
-GIT_EMAIL=$(git config user.email 2>/dev/null || echo "")
-if [ -z "$GIT_USER" ] || [ -z "$GIT_EMAIL" ]; then
+GIT_USER_GLOBAL=$(git config user.name 2>/dev/null || echo "")
+GIT_EMAIL_GLOBAL=$(git config user.email 2>/dev/null || echo "")
+if [ -z "$GIT_USER_GLOBAL" ] || [ -z "$GIT_EMAIL_GLOBAL" ]; then
     echo ""
     warn "Git identity not set. Configuring locally for this repo."
     read -p "    Your name (e.g., 'Mohammed Alawadhi'): " GIT_USER_INPUT
@@ -90,31 +79,24 @@ if [ -z "$GIT_USER" ] || [ -z "$GIT_EMAIL" ]; then
     git config user.email "$GIT_EMAIL_INPUT"
     info "Set local git identity"
 else
-    info "Git identity: $GIT_USER <$GIT_EMAIL>"
+    info "Git identity: $GIT_USER_GLOBAL <$GIT_EMAIL_GLOBAL>"
 fi
 
 # ================================================================
 step "Staging files (respecting .gitignore)"
 
 git add -A
-
-# Show summary of what's being added
 ADDED_FILES=$(git diff --cached --name-only | wc -l | tr -d ' ')
-ADDED_SIZE=$(git diff --cached --stat | tail -1)
 info "Staged $ADDED_FILES files"
-echo "    $ADDED_SIZE"
-
-# Show first 30 staged files so user can sanity-check
 echo ""
-echo "    First 30 staged files:"
-git diff --cached --name-only | head -30 | sed 's/^/      /'
+echo "    First 20 staged files:"
+git diff --cached --name-only | head -20 | sed 's/^/      /'
 TOTAL_STAGED=$(git diff --cached --name-only | wc -l | tr -d ' ')
-[ "$TOTAL_STAGED" -gt 30 ] && echo "      ... and $((TOTAL_STAGED - 30)) more"
+[ "$TOTAL_STAGED" -gt 20 ] && echo "      ... and $((TOTAL_STAGED - 20)) more"
 
 # ================================================================
 step "Committing"
 
-# Check if there's anything to commit
 if git diff --cached --quiet; then
     warn "Nothing to commit (working tree clean)"
 else
@@ -148,36 +130,69 @@ large effect; every TD-MPC2 seed exceeds SAC mean)."
 fi
 
 # ================================================================
-step "Adding remote 'origin'"
+step "Reading GitHub Personal Access Token"
+
+echo ""
+echo -e "${YELLOW}    Paste your GitHub Personal Access Token (PAT).${NC}"
+echo -e "${YELLOW}    Generate one at: https://github.com/settings/tokens (scope: 'repo')${NC}"
+echo -e "${YELLOW}    The token will NOT be visible as you paste — that's normal.${NC}"
+echo ""
+
+# Read PAT silently (no echo)
+read -s -p "    PAT: " GH_TOKEN
+echo ""
+echo ""
+
+if [ -z "$GH_TOKEN" ]; then
+    fail "No PAT provided. Aborted."
+fi
+
+# Quick sanity check on PAT format
+if [[ ! "$GH_TOKEN" =~ ^(ghp_|github_pat_) ]]; then
+    warn "Your PAT does not start with 'ghp_' or 'github_pat_' — that's unusual."
+    warn "Continuing anyway, but if push fails, double-check the token."
+    echo ""
+fi
+
+# Build authenticated URL (only used for this single push)
+AUTH_URL="https://${GH_USER}:${GH_TOKEN}@github.com/${GH_USER}/${GH_REPO}.git"
+SAFE_URL="https://github.com/${GH_USER}/${GH_REPO}.git"
+
+# ================================================================
+step "Configuring remote"
 
 if git remote get-url origin >/dev/null 2>&1; then
-    EXISTING_URL=$(git remote get-url origin)
-    if [ "$EXISTING_URL" = "$REMOTE_URL" ]; then
-        info "Remote already configured: $REMOTE_URL"
-    else
-        warn "Remote 'origin' exists but points elsewhere: $EXISTING_URL"
-        warn "Updating to: $REMOTE_URL"
-        git remote set-url origin "$REMOTE_URL"
-    fi
+    git remote set-url origin "$SAFE_URL"
+    info "Updated remote to: $SAFE_URL"
 else
-    git remote add origin "$REMOTE_URL"
-    info "Added remote: $REMOTE_URL"
+    git remote add origin "$SAFE_URL"
+    info "Added remote: $SAFE_URL"
 fi
 
 # ================================================================
 step "Pushing to GitHub"
 
+echo "    (Using authenticated URL with embedded PAT for this push only.)"
 echo ""
-echo -e "${YELLOW}    AUTHENTICATION:${NC}"
-echo -e "${YELLOW}    When git asks for credentials:${NC}"
-echo -e "${YELLOW}      Username: ${GH_USER}${NC}"
-echo -e "${YELLOW}      Password: <paste your Personal Access Token, NOT your account password>${NC}"
-echo -e "${YELLOW}    PAT generation: https://github.com/settings/tokens (scope: 'repo')${NC}"
-echo ""
-read -p "    Press ENTER to push (or Ctrl+C to abort): "
 
-git push -u origin "$DEFAULT_BRANCH"
+# Push using the authenticated URL directly (overrides 'origin' for this command)
+if git push "$AUTH_URL" "$DEFAULT_BRANCH"; then
+    info "Push succeeded!"
+else
+    fail "Push failed. Check the error above. Common causes:
+       - Invalid PAT (wrong characters, expired, or wrong scope)
+       - Repo isn't actually empty (try 'git pull origin main --rebase --allow-unrelated-histories' then re-run)
+       - Network issue"
+fi
 
+# Set upstream tracking on the safe (token-free) remote
+git branch --set-upstream-to=origin/"$DEFAULT_BRANCH" "$DEFAULT_BRANCH" 2>/dev/null || true
+
+# Make sure the saved remote URL has NO embedded token
+git remote set-url origin "$SAFE_URL"
+info "Cleaned token from saved remote URL (next pushes will use credential helper or prompt)"
+
+# ================================================================
 echo ""
 echo -e "${GREEN}================================================================${NC}"
 echo -e "${GREEN}  ✓✓✓ Push complete!${NC}"
@@ -187,9 +202,12 @@ echo "Visit your repo:"
 echo "  https://github.com/${GH_USER}/${GH_REPO}"
 echo ""
 echo "Recommended next steps:"
-echo "  1. Refresh the repo page → verify everything is there"
-echo "  2. Click the gear icon next to 'About' (top-right of repo page)"
-echo "  3. Set the description:"
+echo ""
+echo "  1. Refresh the repo page — verify everything is there."
+echo ""
+echo "  2. Click the gear icon next to 'About' (top-right of repo page)."
+echo ""
+echo "  3. Set the description (paste this):"
 echo ""
 echo "     Model-based vs. model-free RL on highway-env: TD-MPC2 retains"
 echo "     4x more training reward than SAC under cross-action-space"
