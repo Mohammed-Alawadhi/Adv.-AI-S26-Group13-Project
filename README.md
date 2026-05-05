@@ -1,6 +1,3 @@
-<<<<<<< HEAD
-# Adv.-AI-S26-Group13-Project
-=======
 # Model-Based vs. Model-Free Reinforcement Learning for Autonomous Driving
 
 > A Comparative Study on Highway-Env using TD-MPC2 and SAC
@@ -278,4 +275,3 @@ This work was conducted as part of MLR 555 (Advanced Artificial Intelligence) at
 This project's code and documentation are licensed under the [MIT License](LICENSE). The included trained model weights are released under the same terms.
 
 The official TD-MPC2 implementation (cloned separately into `third_party/tdmpc2/` for local use) is licensed under MIT by its original authors.
->>>>>>> 68347ee (Initial commit: MLR 555 Group 13 research project)
