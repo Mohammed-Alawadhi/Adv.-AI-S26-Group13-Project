@@ -1,0 +1,131 @@
+{
+  "per_seed_results": [
+    {
+      "env_id": "highway-v0",
+      "algo": "sac",
+      "seed_0": 0.5,
+      "seed_1": 0.8,
+      "seed_2": 0.833
+    },
+    {
+      "env_id": "highway-v0",
+      "algo": "tdmpc2",
+      "seed_0": 0.0,
+      "seed_1": 0.0,
+      "seed_2": 0.033
+    },
+    {
+      "env_id": "merge-v0",
+      "algo": "sac",
+      "seed_0": 0.0,
+      "seed_1": 0.0,
+      "seed_2": 0.0
+    },
+    {
+      "env_id": "merge-v0",
+      "algo": "tdmpc2",
+      "seed_0": 0.0,
+      "seed_1": 0.0,
+      "seed_2": 0.0
+    },
+    {
+      "env_id": "roundabout-v0",
+      "algo": "sac",
+      "seed_0": 0.4,
+      "seed_1": 0.4,
+      "seed_2": 0.5
+    },
+    {
+      "env_id": "roundabout-v0",
+      "algo": "tdmpc2",
+      "seed_0": 0.567,
+      "seed_1": 0.567,
+      "seed_2": 0.467
+    }
+  ],
+  "transfer_gap": {
+    "sac_merge-v0": {
+      "reward_retention_per_seed": [
+        0.21588931052467017,
+        0.18145153041625423,
+        0.2847010918888079
+      ],
+      "reward_retention_mean": 0.2273473109432441,
+      "target_success_per_seed": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "target_success_mean": 0.0
+    },
+    "sac_roundabout-v0": {
+      "reward_retention_per_seed": [
+        0.22637736407778733,
+        0.16398253011565497,
+        0.18193533500784947
+      ],
+      "reward_retention_mean": 0.19076507640043058,
+      "target_success_per_seed": [
+        0.4,
+        0.4,
+        0.5
+      ],
+      "target_success_mean": 0.43333333333333335
+    },
+    "tdmpc2_merge-v0": {
+      "reward_retention_per_seed": [
+        0.9574503842689683,
+        1.07784225308852,
+        0.5236147698743874
+      ],
+      "reward_retention_mean": 0.8529691357439587,
+      "target_success_per_seed": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "target_success_mean": 0.0
+    },
+    "tdmpc2_roundabout-v0": {
+      "reward_retention_per_seed": [
+        0.9036761091532007,
+        1.054167693012646,
+        0.6042431412648547
+      ],
+      "reward_retention_mean": 0.8540289811435672,
+      "target_success_per_seed": [
+        0.5666666666666667,
+        0.5666666666666667,
+        0.4666666666666667
+      ],
+      "target_success_mean": 0.5333333333333333
+    }
+  },
+  "roundabout_test": {
+    "sac_success_per_seed": [
+      0.4,
+      0.4,
+      0.5
+    ],
+    "tdmpc2_success_per_seed": [
+      0.5666666666666667,
+      0.5666666666666667,
+      0.4666666666666667
+    ],
+    "sac_reward_per_seed": [
+      25.176190476190474,
+      24.214285714285715,
+      27.52857142857143
+    ],
+    "tdmpc2_reward_per_seed": [
+      28.809523809523814,
+      30.8904761904762,
+      28.523809523809536
+    ],
+    "paired_t_statistic": 1.5,
+    "paired_t_pvalue": 0.2723931248910009,
+    "cohens_d": 0.8660253962844386,
+    "mann_whitney_u": 8.0,
+    "mann_whitney_pvalue": 0.08876492620607673
+  }
+}
